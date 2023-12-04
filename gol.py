@@ -1,8 +1,6 @@
 import numpy as np
 from scipy.ndimage import convolve
 
-# https://gist.githubusercontent.com/electronut/5836145/raw/4e557aae3a4b5dd8962ef8c5827790213d9781ec/conway.py
-
 
 DEAD = 0
 ALIVE = 1
@@ -10,6 +8,9 @@ DORM = 2
 
 
 class CellularAutomaton():
+    """
+    Base class for game of life models.
+    """
     def __init__(self, init_grid: np.ndarray, states: np.array, seed: int):
         # Ensure that init_grid is quadratic and only filled with states
         assert (len(init_grid.shape) == 2

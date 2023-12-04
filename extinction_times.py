@@ -2,11 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 plt.style.use("science")
-from gol import GameOfLife, DormantLife
+from gol import GameOfLife, DormantLife, CellularAutomaton
 
 
-def alive_cells(GOL: object, grid_size: int,
-                runs: int, t_max:int , base_seed:int = None) -> np.array:
+def alive_cells(GoL: CellularAutomaton, grid_size: int,
+                runs: int, t_max: int , base_seed: int = None) -> np.array:
     data = np.zeros((runs, t_max + 1))
     if base_seed is None:
         base_seed = np.random.randint(1)
@@ -14,7 +14,7 @@ def alive_cells(GOL: object, grid_size: int,
         seed = base_seed + i
         rng = np.random.default_rng(seed)
         init_grid = rng.choice([0, 1], p=[0.80, 0.20], size=[grid_size, grid_size])
-        gol = GOL(init_grid)
+        gol = GoL(init_grid)
         N_alive_0 = gol.alive_count
         for j in range(t_max + 1):
             data[i, j] = gol.alive_count / N_alive_0
