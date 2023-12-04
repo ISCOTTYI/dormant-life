@@ -86,16 +86,29 @@ class DormantLife():
         prob = (p_dead, p_alive, p_dorm)
         self.grid = self.rng.choice(self.states, p=prob, size=dims)
 
-    def step(self):
+    def step(self, p=1):
+        """
+        Perform a step in DormantLife. If probability p < 1, transition from
+        DORMANT -> ALIVE with 2 ALIVE neighbors is stochastic.
+        """
+        assert 0 <= p <= 1
         ngrid = self.grid.copy()
         # Create array with 8-neighbor ALIVE counts by convolution, using
         # periodic boundary conditions.
         alive_grid = (self.grid == ALIVE).astype(int)
         c = convolve(alive_grid, self.conv_ker, mode="wrap")
         # Apply rules of game of life w/ dormancy
+        # DEAD awake
         ngrid[(self.grid == DEAD) & (c == 3)] = ALIVE
-        ngrid[(self.grid == DORM) & ((c == 2) | (c == 3))] = ALIVE
+        # DORMANT awake
+        # Overlay grid with stochastic grid that determines transition probaiblity
+        # for every cell, iff part of rules.
+        p_grid = self.rng.choice([0, 1], p=[1-p, p], size=(self.N, self.N))
+        ngrid[(self.grid == DORM) & ((p_grid == 1) & (c == 2))] = ALIVE
+        ngrid[(self.grid == DORM) & (c == 3)] = ALIVE
+        # ALIVE dies
         ngrid[(self.grid == ALIVE) & ((c < 1) | (c > 3))] = DEAD
+        # ALIVE goes DORMANT
         ngrid[(self.grid == ALIVE) & (c == 1)] = DORM
         self.grid = ngrid
         return ngrid

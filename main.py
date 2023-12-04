@@ -24,7 +24,7 @@ if __name__ == "__main__":
     mat_dl = ax[1].matshow(dl.grid, cmap=cmap, norm=norm)
     def update(frame):
         mat_gol.set_data(gol.step())
-        mat_dl.set_data(dl.step())
+        mat_dl.set_data(dl.step(p=0))
         ax[0].set(title=r"Game of Life: $N_\text{alive} = %d$"%gol.alive_count)
         ax[1].set(title=r"Dormant Life: $N_\text{alive} = %d$"%dl.alive_count)
     ani = animation.FuncAnimation(fig, update, interval=100, save_count=100)
