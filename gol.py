@@ -9,16 +9,15 @@ ALIVE = 1
 DORM = 2
 
 
-class GameOfLife():
-    def __init__(self, init_grid:np.ndarray, seed:int=None):
-        # 0: dead, 1: alive
-        self.states = np.array([DEAD, ALIVE])
+class CellularAutomaton():
+    def __init__(self, init_grid: np.ndarray, states: np.array, seed: int):
         # Ensure that init_grid is quadratic and only filled with states
         assert (len(init_grid.shape) == 2
                 and init_grid.shape[0] == init_grid.shape[1])
-        assert np.all(np.isin(init_grid, self.states))
+        assert np.all(np.isin(init_grid, states))
         self.grid = init_grid
         self.N = init_grid.shape[0] # board size
+        assert self.N > 2 # Cannot deal with 2x2
 
         # convolution kernel
         self.conv_ker = np.array([
@@ -34,7 +33,20 @@ class GameOfLife():
     @property
     def alive_count(self):
         return np.count_nonzero(self.grid == ALIVE)
+    
+    def reinit_grid(self):
+        raise NotImplementedError("Instance of CllularAutomaton may not be initialized!")
+    
+    def step(self):
+        raise NotImplementedError("Instance of CllularAutomaton does not implement rules!")
 
+
+class GameOfLife(CellularAutomaton):
+    def __init__(self, init_grid:np.ndarray, seed:int=None):
+        # 0: dead, 1: alive
+        self.states = np.array([DEAD, ALIVE])
+        super().__init__(init_grid, self.states, seed)
+    
     def reinit_grid(self, p_alive):
         assert 0 <= p_alive <= 1
         p_dead = 1 - p_alive
@@ -53,31 +65,11 @@ class GameOfLife():
         return ngrid
     
 
-class DormantLife():
+class DormantLife(CellularAutomaton):
     def __init__(self, init_grid:np.array, seed:int=None):
         # 0: dead, 1: alive, 2: dormant
         self.states = np.array([DEAD, ALIVE, DORM])
-        # Ensure that init_grid is quadratic and only filled with states
-        assert (len(init_grid.shape) == 2
-                and init_grid.shape[0] == init_grid.shape[1])
-        assert np.all(np.isin(init_grid, self.states))
-        self.grid = init_grid
-        self.N = init_grid.shape[0] # board size
-
-        # convolution kernel
-        self.conv_ker = np.array([
-            [1, 1, 1],
-            [1, 0, 1],
-            [1, 1, 1],
-        ])
-        if seed:
-            self.rng = np.random.default_rng(seed)
-        else:
-            self.rng = np.random.default_rng()
-
-    @property
-    def alive_count(self):
-        return np.count_nonzero(self.grid == ALIVE)
+        super().__init__(init_grid, self.states, seed)
     
     def reinit_grid(self, p_alive, p_dorm):
         assert 0 <= p_alive <= 1 and 0 <= p_dorm <= 1 and p_alive + p_dorm < 1
