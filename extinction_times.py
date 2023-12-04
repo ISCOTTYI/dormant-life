@@ -22,32 +22,6 @@ def alive_cells(GOL: object, grid_size: int,
     return np.mean(data, axis=0)
 
 
-# def gol_vs_dl(grid_size: int, runs: int,
-#               t_max: int, rnd=False) -> (np.array, np.array):
-#     gol_data = np.zeros((runs, t_max + 1))
-#     dl_data = np.zeros((runs, t_max + 1))
-    
-#     for i in range(runs):
-#         seed = i + 100
-#         if rnd:
-#             rng = np.random.default_rng()
-#         else:
-#             rng = np.random.default_rng(seed)
-#         init_grid = rng.choice([0, 1], p=[0.80, 0.20], size=[grid_size, grid_size])
-#         gol = GameOfLife(init_grid)
-#         dl = DormantLife(init_grid)
-#         N_alive_0 = gol.alive_count
-#         for j in range(t_max + 1):
-#             gol_data[i, j] = gol.alive_count / N_alive_0
-#             dl_data[i, j] = dl.alive_count / N_alive_0
-#             gol.step()
-#             dl.step()
-    
-#     gol_data_avg = np.mean(gol_data, axis=0)
-#     dl_data_avg = np.mean(dl_data, axis=0)
-#     return gol_data_avg, dl_data_avg
-
-
 if __name__ == "__main__":
     t_max = 2000
     times = np.arange(t_max + 1)
