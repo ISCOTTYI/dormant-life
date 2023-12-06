@@ -29,28 +29,61 @@ class TestDormantLife(unittest.TestCase):
         grid_step = gol.step()
         np.testing.assert_array_equal(test_grid, grid_step)
     
-    def test_stochasticity_DORM_ALIVE_2_neighbors(self):
+    def test_limit_cases_stochasticity(self):
         test_grid = np.array([
             [DEAD, ALIVE, DEAD],
             [DEAD, DORM, DEAD],
             [DEAD, ALIVE, DEAD]
         ])
-        gol_0 = DormantLife(test_grid)
-        grid_step_0 = gol_0.step(p=0)
-        res_0 = np.array([
+        # alpha = 0 should get us GameOfLife step with DEAD == DORM.
+        gol = DormantLife(test_grid)
+        gol_grid_step = gol.step(alpha=0)
+        gol_res = np.array([
             [DEAD, DORM, DEAD],
             [DEAD, DORM, DEAD],
             [DEAD, DORM, DEAD]
         ])
-        np.testing.assert_array_equal(res_0, grid_step_0)
-        gol_1 = DormantLife(test_grid)
-        grid_step_1 = gol_1.step(p=1)
-        res_1 = np.array([
+        np.testing.assert_array_equal(gol_res, gol_grid_step)
+        # alpha = 1 should get us determinstic DormantLife step.
+        dl = DormantLife(test_grid)
+        dl_grid_step = dl.step(alpha=1)
+        dl_res = np.array([
             [DEAD, DORM, DEAD],
             [DEAD, ALIVE, DEAD],
             [DEAD, DORM, DEAD]
         ])
-        np.testing.assert_array_equal(res_1, grid_step_1)
+        np.testing.assert_array_equal(dl_res, dl_grid_step)
+
+    def test_p_grid_decay(self):
+        gol = DormantLife(np.full((3, 3), DEAD))
+        gol.step(alpha=0.5)
+        np.testing.assert_array_equal(gol.p_grid, np.full((3, 3), 0.5))
+    
+    def test_p_grid_reset(self):
+        test_grid = np.array([
+            [ALIVE, ALIVE, DEAD],
+            [DEAD, DEAD, DEAD],
+            [DEAD, DEAD, DEAD]
+        ])
+        gol = DormantLife(test_grid)
+        gol.step(alpha=0.5)
+        res_p_grid = np.full((3, 3), 0.5); res_p_grid[0, 0:2] = 1
+        np.testing.assert_array_equal(gol.p_grid, res_p_grid)
+    
+    def test_stochastic_update(self):
+        test_grid = np.array([
+            [DORM, ALIVE, DEAD],
+            [DORM, ALIVE, DEAD],
+            [DEAD, DEAD, DEAD]
+        ])
+        gol = DormantLife(test_grid, seed=1)
+        grid_step = gol.step(alpha=0.6)
+        res = np.array([
+            [ALIVE, DORM, DEAD],
+            [DORM, DORM, DEAD],
+            [DEAD, DEAD, DEAD]
+        ])
+        np.testing.assert_array_equal(grid_step, res)
 
 
 if __name__ == '__main__':

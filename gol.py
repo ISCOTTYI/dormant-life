@@ -71,6 +71,7 @@ class DormantLife(CellularAutomaton):
         # 0: dead, 1: alive, 2: dormant
         self.states = np.array([DEAD, ALIVE, DORM])
         super().__init__(init_grid, self.states, seed)
+        self.p_grid = np.ones((self.N, self.N))
     
     def reinit_grid(self, p_alive, p_dorm):
         assert 0 <= p_alive <= 1 and 0 <= p_dorm <= 1 and p_alive + p_dorm < 1
@@ -79,12 +80,13 @@ class DormantLife(CellularAutomaton):
         prob = (p_dead, p_alive, p_dorm)
         self.grid = self.rng.choice(self.states, p=prob, size=dims)
 
-    def step(self, p=1):
+    def step(self, alpha: float = 1):
         """
-        Perform a step in DormantLife. If probability p < 1, transition from
-        DORMANT -> ALIVE with 2 ALIVE neighbors is stochastic.
+        Perform a step in DormantLife. For alpha = 1 we get deterministic
+        DormantLife, for alpha = 0 we get Game of Life.
         """
-        assert 0 <= p <= 1
+        assert 0 <= alpha <= 1
+        self.p_grid *= alpha # decay
         ngrid = self.grid.copy()
         # Create array with 8-neighbor ALIVE counts by convolution, using
         # periodic boundary conditions.
@@ -92,16 +94,25 @@ class DormantLife(CellularAutomaton):
         c = convolve(alive_grid, self.conv_ker, mode="wrap")
         # Apply rules of game of life w/ dormancy
         # DEAD awake
-        ngrid[(self.grid == DEAD) & (c == 3)] = ALIVE
+        ngrid[(self.grid == DEAD)
+              & (c == 3)] = ALIVE
         # DORMANT awake
-        # Overlay grid with stochastic grid that determines transition probaiblity
-        # for every cell, iff part of rules.
-        p_grid = self.rng.choice([0, 1], p=[1-p, p], size=(self.N, self.N))
-        ngrid[(self.grid == DORM) & ((p_grid == 1) & (c == 2))] = ALIVE
-        ngrid[(self.grid == DORM) & (c == 3)] = ALIVE
+        # Awakening with 2 ALIVE neighbors happens only with probability given
+        # by p_grid. If alpha = 1, p_grid is always 1 and we get non-stochastic
+        # DormantLife, if alpha = 0, p_grid is always 0 and we get GoL.
+        decision_grid = self.rng.random((self.N, self.N))
+        ngrid[(self.grid == DORM)
+              & ((c == 2) & (decision_grid < self.p_grid))] = ALIVE
+        ngrid[(self.grid == DORM)
+              & (c == 3)] = ALIVE
         # ALIVE dies
-        ngrid[(self.grid == ALIVE) & ((c < 1) | (c > 3))] = DEAD
+        ngrid[(self.grid == ALIVE)
+              & ((c < 1) | (c > 3))] = DEAD
         # ALIVE goes DORMANT
-        ngrid[(self.grid == ALIVE) & (c == 1)] = DORM
+        ngrid[(self.grid == ALIVE)
+              & (c == 1)] = DORM
+        # Decay probability reset
+        self.p_grid[(self.grid == ALIVE)
+                    & (c == 1)] = 1
         self.grid = ngrid
         return ngrid
