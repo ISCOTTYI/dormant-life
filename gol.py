@@ -17,6 +17,7 @@ class CellularAutomaton():
                 and init_grid.shape[0] == init_grid.shape[1])
         assert np.all(np.isin(init_grid, states))
         self.grid = init_grid
+        self.t = 0
         self.N = init_grid.shape[0] # board size
         assert self.N > 2 # Cannot deal with 2x2
 
@@ -35,6 +36,11 @@ class CellularAutomaton():
     def alive_count(self):
         return np.count_nonzero(self.grid == ALIVE)
     
+    def compute_neighbor_counts_for(self, state):
+        filtered_grid = (self.grid == state).astype(int)
+        c = convolve(filtered_grid, self.conv_ker, mode="wrap")
+        return c
+    
     def reinit_grid(self):
         raise NotImplementedError("Instance of CllularAutomaton may not be initialized!")
     
@@ -47,7 +53,8 @@ class GameOfLife(CellularAutomaton):
         # 0: dead, 1: alive
         self.states = np.array([DEAD, ALIVE])
         super().__init__(init_grid, self.states, seed)
-    
+        self.alive_neighbor_counts = None
+        
     def reinit_grid(self, p_alive):
         assert 0 <= p_alive <= 1
         p_dead = 1 - p_alive
@@ -58,11 +65,12 @@ class GameOfLife(CellularAutomaton):
         ngrid = self.grid.copy()
         # Create array with 8-neighbor sums by convolution, using periodic
         # boundary conditions.
-        c = convolve(self.grid, self.conv_ker, mode="wrap")
+        self.alive_neighbor_counts = c = self.compute_neighbor_counts_for(ALIVE)
         # Apply rules of game of life
         ngrid[(self.grid == ALIVE) & ((c < 2) | (c > 3))] = DEAD
         ngrid[(self.grid == DEAD) & (c == 3)] = ALIVE
         self.grid = ngrid
+        self.t += 1
         return ngrid
     
 
@@ -72,6 +80,7 @@ class DormantLife(CellularAutomaton):
         self.states = np.array([DEAD, ALIVE, DORM])
         super().__init__(init_grid, self.states, seed)
         self.p_grid = np.ones((self.N, self.N))
+        self.alive_neighbor_counts = None
     
     def reinit_grid(self, p_alive, p_dorm):
         assert 0 <= p_alive <= 1 and 0 <= p_dorm <= 1 and p_alive + p_dorm < 1
@@ -90,8 +99,7 @@ class DormantLife(CellularAutomaton):
         ngrid = self.grid.copy()
         # Create array with 8-neighbor ALIVE counts by convolution, using
         # periodic boundary conditions.
-        alive_grid = (self.grid == ALIVE).astype(int)
-        c = convolve(alive_grid, self.conv_ker, mode="wrap")
+        self.alive_neighbor_counts = c = self.compute_neighbor_counts_for(ALIVE)
         # Apply rules of game of life w/ dormancy
         # DEAD awake
         ngrid[(self.grid == DEAD)
@@ -115,4 +123,5 @@ class DormantLife(CellularAutomaton):
         self.p_grid[(self.grid == ALIVE)
                     & (c == 1)] = 1
         self.grid = ngrid
+        self.t += 1
         return ngrid
