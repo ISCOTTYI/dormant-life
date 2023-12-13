@@ -32,9 +32,8 @@ class CellularAutomaton():
         else:
             self.rng = np.random.default_rng()
     
-    @property
-    def alive_count(self):
-        return np.count_nonzero(self.grid == ALIVE)
+    def count_state(self, state: int):
+        return np.count_nonzero(self.grid == state)
     
     def compute_neighbor_counts_for(self, state):
         filtered_grid = (self.grid == state).astype(int)
@@ -42,18 +41,35 @@ class CellularAutomaton():
         return c
     
     def reinit_grid(self):
-        raise NotImplementedError("Instance of CllularAutomaton may not be initialized!")
+        raise NotImplementedError("Instance of CellularAutomaton may not be initialized!")
     
     def step(self):
-        raise NotImplementedError("Instance of CllularAutomaton does not implement rules!")
-
+        raise NotImplementedError("Instance of CellularAutomaton does not implement rules!")
+    
+    def step_until(self, t_max: int) -> np.array:
+        """
+        Step the system until t_max and return alive_counts on the way
+        """
+        assert t_max > self.t
+        data = np.zeros(t_max+1 - self.t)
+        i = 0
+        while self.t <= t_max:
+            data[i] = self.alive_count
+            self.step()
+            i += 1
+        return data
+            
 
 class GameOfLife(CellularAutomaton):
-    def __init__(self, init_grid:np.ndarray, seed:int=None):
+    def __init__(self, init_grid: np.ndarray, seed: int = None):
         # 0: dead, 1: alive
         self.states = np.array([DEAD, ALIVE])
         super().__init__(init_grid, self.states, seed)
         self.alive_neighbor_counts = None
+    
+    @property
+    def alive_count(self):
+        return self.count_state(ALIVE)
         
     def reinit_grid(self, p_alive):
         assert 0 <= p_alive <= 1
@@ -75,12 +91,21 @@ class GameOfLife(CellularAutomaton):
     
 
 class DormantLife(CellularAutomaton):
-    def __init__(self, init_grid:np.array, seed:int=None):
+    def __init__(self, init_grid:np.array, seed:int=None, alpha: float = 1):
         # 0: dead, 1: alive, 2: dormant
         self.states = np.array([DEAD, ALIVE, DORM])
         super().__init__(init_grid, self.states, seed)
+        
         self.p_grid = np.ones((self.N, self.N))
+        
         self.alive_neighbor_counts = None
+
+        assert 0 <= alpha <= 1
+        self.alpha = alpha
+    
+    @property
+    def alive_count(self):
+        return self.count_state(ALIVE)
     
     def reinit_grid(self, p_alive, p_dorm):
         assert 0 <= p_alive <= 1 and 0 <= p_dorm <= 1 and p_alive + p_dorm < 1
@@ -89,13 +114,12 @@ class DormantLife(CellularAutomaton):
         prob = (p_dead, p_alive, p_dorm)
         self.grid = self.rng.choice(self.states, p=prob, size=dims)
 
-    def step(self, alpha: float = 1):
+    def step(self):
         """
         Perform a step in DormantLife. For alpha = 1 we get deterministic
         DormantLife, for alpha = 0 we get Game of Life.
         """
-        assert 0 <= alpha <= 1
-        self.p_grid *= alpha # decay
+        self.p_grid *= self.alpha # decay
         ngrid = self.grid.copy()
         # Create array with 8-neighbor ALIVE counts by convolution, using
         # periodic boundary conditions.
