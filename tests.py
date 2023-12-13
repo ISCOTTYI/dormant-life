@@ -36,8 +36,8 @@ class TestDormantLife(unittest.TestCase):
             [DEAD, ALIVE, DEAD]
         ])
         # alpha = 0 should get us GameOfLife step with DEAD == DORM.
-        gol = DormantLife(test_grid)
-        gol_grid_step = gol.step(alpha=0)
+        gol = DormantLife(test_grid, alpha=0)
+        gol_grid_step = gol.step()
         gol_res = np.array([
             [DEAD, DORM, DEAD],
             [DEAD, DORM, DEAD],
@@ -45,8 +45,8 @@ class TestDormantLife(unittest.TestCase):
         ])
         np.testing.assert_array_equal(gol_res, gol_grid_step)
         # alpha = 1 should get us determinstic DormantLife step.
-        dl = DormantLife(test_grid)
-        dl_grid_step = dl.step(alpha=1)
+        dl = DormantLife(test_grid, alpha=1)
+        dl_grid_step = dl.step()
         dl_res = np.array([
             [DEAD, DORM, DEAD],
             [DEAD, ALIVE, DEAD],
@@ -55,8 +55,8 @@ class TestDormantLife(unittest.TestCase):
         np.testing.assert_array_equal(dl_res, dl_grid_step)
 
     def test_p_grid_decay(self):
-        gol = DormantLife(np.full((3, 3), DEAD))
-        gol.step(alpha=0.5)
+        gol = DormantLife(np.full((3, 3), DEAD), alpha=0.5)
+        gol.step()
         np.testing.assert_array_equal(gol.p_grid, np.full((3, 3), 0.5))
     
     def test_p_grid_reset(self):
@@ -65,8 +65,8 @@ class TestDormantLife(unittest.TestCase):
             [DEAD, DEAD, DEAD],
             [DEAD, DEAD, DEAD]
         ])
-        gol = DormantLife(test_grid)
-        gol.step(alpha=0.5)
+        gol = DormantLife(test_grid, alpha=0.5)
+        gol.step()
         res_p_grid = np.full((3, 3), 0.5); res_p_grid[0, 0:2] = 1
         np.testing.assert_array_equal(gol.p_grid, res_p_grid)
     
@@ -76,8 +76,8 @@ class TestDormantLife(unittest.TestCase):
             [DORM, ALIVE, DEAD],
             [DEAD, DEAD, DEAD]
         ])
-        gol = DormantLife(test_grid, seed=1)
-        grid_step = gol.step(alpha=0.6)
+        gol = DormantLife(test_grid, seed=1, alpha=0.6)
+        grid_step = gol.step()
         res = np.array([
             [ALIVE, DORM, DEAD],
             [DORM, DORM, DEAD],
