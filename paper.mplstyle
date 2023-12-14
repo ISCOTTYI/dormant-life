@@ -6,7 +6,13 @@
 axes.prop_cycle : cycler('color', ['0C5DA5', 'FF2C00', '00B945', 'FF9500', '845B97', '474747', '9e9e9e'])
 
 # Set default figure size
-figure.figsize : 4, 3
+# NOTE:
+# For side-by-side use
+#     figsize = (2*axes_width + wspace*axes_width, axes_height)
+# With defaults:
+#     figsize = (7.2, 3.2)
+figure.figsize : 3.2, 3.2
+figure.subplot.wspace : 0.25
 
 # Set x axis
 xtick.direction : in
@@ -34,9 +40,10 @@ lines.linewidth : 1.
 # Remove legend frame
 legend.frameon : False
 
-# Always save as 'tight'
-savefig.bbox : tight
-savefig.pad_inches : 0.05
+# MESSES WITH SIZES: Always save as 'tight'
+# savefig.bbox : tight
+# savefig.pad_inches : 0.05
+savefig.dpi : 500
 
 # Use serif fonts
 font.serif : cmr10, Computer Modern Serif, DejaVu Serif
