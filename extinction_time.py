@@ -56,11 +56,11 @@ if __name__ == "__main__":
                (alphas), header="Alpha values for which data is stored.")
     for alpha in alphas:
         print(f"alpha = {alpha}")
-        fname = f"alpha-p{str(alpha)[2:]}"
+        fname = f"alpha-p{str(alpha)[2:]}.dat"
         parameters = (grid_size, q, alpha, t_max, runs) = (
             30, 0.3701, alpha, 100_000, 5000
         )
         data = dormant_life_extinction_times(*parameters, progress_updates=True)
-        np.savetxt("./data/dormant-life/extinction-time/alpha-p35.dat",
+        np.savetxt(f"./data/dormant-life/extinction-time/{fname}",
                    (data),
                    header=f"(grid_size, q, alpha, t_max, runs) = {str(parameters)}")
