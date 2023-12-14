@@ -91,7 +91,7 @@ class GameOfLife(CellularAutomaton):
     
 
 class DormantLife(CellularAutomaton):
-    def __init__(self, init_grid:np.array, seed:int=None, alpha: float = 1):
+    def __init__(self, init_grid:np.array, alpha: float = 1, seed:int=None):
         # 0: dead, 1: alive, 2: dormant
         self.states = np.array([DEAD, ALIVE, DORM])
         super().__init__(init_grid, self.states, seed)
