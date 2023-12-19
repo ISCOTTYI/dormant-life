@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 from matplotlib.colors import ListedColormap, BoundaryNorm
-from gol import GameOfLife, DormantLife
+from gol import GameOfLife, DormantLife, DEAD, ALIVE, DORM
 
 if __name__ == "__main__":
     init_grid = np.random.choice([0, 1], p=[0.80, 0.20], size=[30, 30])
@@ -12,7 +12,7 @@ if __name__ == "__main__":
     #     [1, 1, 0]
     # ])
     gol = GameOfLife(init_grid)
-    dl = DormantLife(init_grid)
+    dl = DormantLife(init_grid, alpha=1)
     colors = ["white", "tab:blue", "lightblue"]
     bounds = [-0.5, 0.5, 1.5, 2.5]
     cmap = ListedColormap(colors)
@@ -24,8 +24,8 @@ if __name__ == "__main__":
     mat_dl = ax[1].matshow(dl.grid, cmap=cmap, norm=norm)
     def update(frame):
         mat_gol.set_data(gol.step())
-        mat_dl.set_data(dl.step(alpha=0.1))
+        mat_dl.set_data(dl.step())
         ax[0].set(title=r"Game of Life: $N_\text{alive} = %d$"%gol.alive_count)
         ax[1].set(title=r"Dormant Life: $N_\text{alive} = %d$"%dl.alive_count)
-    ani = animation.FuncAnimation(fig, update, interval=1, save_count=100)
+    ani = animation.FuncAnimation(fig, update, interval=10, save_count=100)
     plt.show()
