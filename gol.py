@@ -46,15 +46,16 @@ class CellularAutomaton():
     def step(self):
         raise NotImplementedError("Instance of CellularAutomaton does not implement rules!")
     
-    def step_until(self, t_max: int) -> np.array:
+    def state_count_time_series(self, t_max: int, state: int) -> np.array:
         """
-        Step the system until t_max and return alive_counts on the way
+        Step the system until t_max and return the counts of state at each time
+        step on the way.
         """
         assert t_max > self.t
         data = np.zeros(t_max+1 - self.t)
         i = 0
         while self.t <= t_max:
-            data[i] = self.alive_count
+            data[i] = self.count_state(state)
             self.step()
             i += 1
         return data
@@ -70,6 +71,9 @@ class GameOfLife(CellularAutomaton):
     @property
     def alive_count(self):
         return self.count_state(ALIVE)
+    
+    def alive_count_time_series(self, t_max: int) -> np.array:
+        return self.state_count_time_series(t_max, ALIVE)
         
     def reinit_grid(self, p_alive):
         assert 0 <= p_alive <= 1
@@ -106,6 +110,16 @@ class DormantLife(CellularAutomaton):
     @property
     def alive_count(self):
         return self.count_state(ALIVE)
+    
+    @property
+    def dorm_count(self):
+        return self.count_state(DORM)
+    
+    def alive_count_time_series(self, t_max: int) -> np.array:
+        return self.state_count_time_series(t_max, ALIVE)
+    
+    def dorm_count_time_series(self, t_max: int) -> np.array:
+        return self.state_count_time_series(t_max, DORM)
     
     def reinit_grid(self, p_alive, p_dorm):
         assert 0 <= p_alive <= 1 and 0 <= p_dorm <= 1 and p_alive + p_dorm < 1
