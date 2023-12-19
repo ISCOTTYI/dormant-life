@@ -1,15 +1,18 @@
-import sys
+import sys, os
 import numpy as np
 import multiprocessing
 from gol import CellularAutomaton, DormantLife
 
 
+BASE_PATH = "./data/dormant-life/extinction-time"
+
+
 def find_extinction_time(ca: CellularAutomaton, t_max: int,
-                         equal_step_limit: int = 100):
+                         equal_step_limit: int = 100) -> int:
     """
     Find the time step where the DormantLife dl goes extinct, where extinction
     is characterized by the number of alive cells staying constant for at least
-    equal_step_limit steps.
+    equal_step_limit steps. If ca goes extinct after t_max, -1 is returned.
     """
     assert 0 < equal_step_limit < t_max
     assert ca.t == 0
@@ -51,7 +54,7 @@ def dormant_life_extinction_times(grid_size: int,
 
 if __name__ == "__main__":
     alphas = np.round(np.linspace(0, 1, 75), 3)
-    np.savetxt("./data/dormant-life/extinction-time/alpha-range.dat",
+    np.savetxt(os.path.join(BASE_PATH, "alpha-range.dat"),
                (alphas), header="Alpha values for which data is stored.")
 
     def compute(alpha):
@@ -61,10 +64,8 @@ if __name__ == "__main__":
             30, 0.3701, alpha, 1_000_000, 1000
         )
         data = dormant_life_extinction_times(*parameters, progress_updates=True)
-        np.savetxt(f"./data/dormant-life/extinction-time/{fname}",
-                   (data),
+        np.savetxt(os.path.join(BASE_PATH, fname), (data),
                    header=f"(grid_size, q, alpha, t_max, runs) = {str(parameters)}")
-
 
     # Use the with statement to create and close the pool
     with multiprocessing.Pool() as pool:
