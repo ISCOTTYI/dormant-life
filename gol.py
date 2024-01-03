@@ -35,10 +35,19 @@ class CellularAutomaton():
     def count_state(self, state: int):
         return np.count_nonzero(self.grid == state)
     
-    def compute_neighbor_counts_for(self, state):
+    def compute_neighbor_counts_for(self, state: int):
         filtered_grid = (self.grid == state).astype(int)
         c = convolve(filtered_grid, self.conv_ker, mode="wrap")
         return c
+    
+    def transitions_from(self, from_grid: np.ndarray,
+                         from_state: int, to_state: int) -> int:
+        """
+        Count the transitions from from_state to to_state between from_grid to
+        the momentary grid.
+        """
+        return np.sum(np.all(
+            (from_grid == from_state), (self.grid == to_state), axis=0))
     
     def reinit_grid(self):
         raise NotImplementedError("Instance of CellularAutomaton may not be initialized!")
@@ -95,7 +104,7 @@ class GameOfLife(CellularAutomaton):
     
 
 class DormantLife(CellularAutomaton):
-    def __init__(self, init_grid:np.array, alpha: float = 1, seed:int=None):
+    def __init__(self, init_grid:np.ndarray, alpha: float = 1, seed: int=None):
         # 0: dead, 1: alive, 2: dormant
         self.states = np.array([DEAD, ALIVE, DORM])
         super().__init__(init_grid, self.states, seed)
@@ -121,7 +130,7 @@ class DormantLife(CellularAutomaton):
     def dorm_count_time_series(self, t_max: int) -> np.array:
         return self.state_count_time_series(t_max, DORM)
     
-    def reinit_grid(self, p_alive, p_dorm):
+    def reinit_grid(self, p_alive: float, p_dorm: float):
         assert 0 <= p_alive <= 1 and 0 <= p_dorm <= 1 and p_alive + p_dorm < 1
         p_dead = 1 - p_alive - p_dorm
         dims = (self.N, self.N)
