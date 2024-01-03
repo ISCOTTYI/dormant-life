@@ -3,3 +3,4 @@ venv/
 .vscode
 simulation_claudius.py
 OLD*
+.DS_Store
