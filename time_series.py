@@ -3,7 +3,7 @@ import numpy as np
 import multiprocessing
 from gol import CellularAutomaton, DormantLife
 
-GRID_SIZE = 30
+GRID_SIZE = 100
 BASE_PATH = f"data/dormant-life/time-series/grid-size-{GRID_SIZE}"
 
 
@@ -55,14 +55,14 @@ def save_data(alive_data, dorm_data, alpha, header: str):
 
 
 def compute(alpha):
-        print(f"\nalpha = {alpha}")
-        parameters = (grid_size, q, alpha, t_max, runs) = (
-            GRID_SIZE, 0.3701, alpha, 10_000, 1000
-        )
-        alive_data, dorm_data = dormant_life_time_series(*parameters,
-                                                         progress_updates=True)
-        save_data(alive_data, dorm_data, alpha,
-                  header=f"(grid_size, q, alpha, t_max, runs) = {str(parameters)}")
+    print(f"\nalpha = {alpha}")
+    parameters = (grid_size, q, alpha, t_max, runs) = (
+        GRID_SIZE, 0.3701, alpha, 10_000, 1000
+    )
+    alive_data, dorm_data = dormant_life_time_series(*parameters,
+                                                     progress_updates=True)
+    save_data(alive_data, dorm_data, alpha,
+              header=f"(grid_size, q, alpha, t_max, runs) = {str(parameters)}")
 
 
 if __name__ == "__main__":
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     np.savetxt(os.path.join(BASE_PATH, "alpha-range.dat"),
                (alphas), header="Alpha values for which data is stored.")
     
-    with multiprocessing.Pool() as pool:
+    with multiprocessing.Pool(processes=3) as pool:
         # Use imap_unordered to apply the function to each value of alpha in 
         # parallel and yield the results as they are ready, regardless of the
         # order 
