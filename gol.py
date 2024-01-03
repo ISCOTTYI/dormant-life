@@ -47,7 +47,7 @@ class CellularAutomaton():
         the momentary grid.
         """
         return np.sum(np.all(
-            (from_grid == from_state), (self.grid == to_state), axis=0))
+            (from_grid == from_state, self.grid == to_state), axis=0))
     
     def reinit_grid(self):
         raise NotImplementedError("Instance of CellularAutomaton may not be initialized!")
@@ -55,18 +55,17 @@ class CellularAutomaton():
     def step(self):
         raise NotImplementedError("Instance of CellularAutomaton does not implement rules!")
     
-    def state_count_time_series(self, t_max: int, state: int) -> np.array:
+    def state_count_time_series(self, t_max: int, state: int) -> np.ndarray:
         """
         Step the system until t_max and return the counts of state at each time
         step on the way.
         """
-        assert t_max > self.t
-        data = np.zeros(t_max+1 - self.t)
-        i = 0
+        t0 = self.t
+        assert t0 < t_max
+        data = np.zeros(t_max+1 - t0)
         while self.t <= t_max:
-            data[i] = self.count_state(state)
+            data[self.t - t0] = self.count_state(state)
             self.step()
-            i += 1
         return data
             
 

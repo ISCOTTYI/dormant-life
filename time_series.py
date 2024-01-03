@@ -3,6 +3,7 @@ import numpy as np
 import multiprocessing
 from gol import CellularAutomaton, DormantLife
 
+
 GRID_SIZE = 100
 BASE_PATH = f"data/dormant-life/time-series/grid-size-{GRID_SIZE}"
 
