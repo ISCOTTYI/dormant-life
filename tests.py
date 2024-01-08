@@ -84,6 +84,19 @@ class TestDormantLife(unittest.TestCase):
             [DEAD, DEAD, DEAD]
         ])
         np.testing.assert_array_equal(grid_step, res)
+    
+    def test_transitions(self):
+        test_grid = np.array([
+            [DEAD, ALIVE, DORM],
+            [DEAD, ALIVE, DORM],
+            [DEAD, DEAD, DEAD]
+        ])
+        gol = DormantLife(test_grid)
+        grid_step = gol.step()
+        self.assertEqual(gol.transitions_from(test_grid, ALIVE, DORM), 2)
+        self.assertEqual(gol.transitions_from(test_grid, DORM, ALIVE), 2)
+        self.assertEqual(gol.transitions_from(test_grid, ALIVE, DEAD), 0)
+        self.assertEqual(gol.transitions_from(test_grid, DEAD, ALIVE), 0)
 
 
 if __name__ == '__main__':

@@ -46,6 +46,7 @@ class CellularAutomaton():
         Count the transitions from from_state to to_state between from_grid to
         the momentary grid.
         """
+        assert from_state != to_state
         return np.sum(np.all(
             (from_grid == from_state, self.grid == to_state), axis=0))
     
