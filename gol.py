@@ -36,25 +36,21 @@ class CellularAutomaton():
         return np.count_nonzero(self.grid == state)
     
     def compute_neighbor_counts_for(self, state: int):
-        filtered_grid = (self.grid == state).astype(int)
+        filtered_grid = (self.grid == state).astype(np.intc)
         c = convolve(filtered_grid, self.conv_ker, mode="wrap")
         return c
-    
-    def transitions_from(self, from_grid: np.ndarray,
-                         from_state: int, to_state: int) -> int:
-        """
-        Count the transitions from from_state to to_state between from_grid to
-        the momentary grid.
-        """
-        assert from_state != to_state
-        return np.sum(np.all(
-            (from_grid == from_state, self.grid == to_state), axis=0))
     
     def reinit_grid(self):
         raise NotImplementedError("Instance of CellularAutomaton may not be initialized!")
     
-    def step(self):
+    def step(self) -> np.ndarray:
         raise NotImplementedError("Instance of CellularAutomaton does not implement rules!")
+    
+    def step_until(self, t: int) -> np.ndarray:
+        assert self.t <= t
+        while self.t < t:
+            self.step()
+        return self.grid
     
     def state_count_time_series(self, t_max: int, state: int) -> np.ndarray:
         """
@@ -90,7 +86,7 @@ class GameOfLife(CellularAutomaton):
         dims = (self.N, self.N)
         self.grid = self.rng.choice(self.states, p=(p_dead, p_alive), size=dims)
     
-    def step(self):
+    def step(self) -> np.ndarray:
         ngrid = self.grid.copy()
         # Create array with 8-neighbor sums by convolution, using periodic
         # boundary conditions.
@@ -124,10 +120,10 @@ class DormantLife(CellularAutomaton):
     def dorm_count(self):
         return self.count_state(DORM)
     
-    def alive_count_time_series(self, t_max: int) -> np.array:
+    def alive_count_time_series(self, t_max: int) -> np.ndarray:
         return self.state_count_time_series(t_max, ALIVE)
     
-    def dorm_count_time_series(self, t_max: int) -> np.array:
+    def dorm_count_time_series(self, t_max: int) -> np.ndarray:
         return self.state_count_time_series(t_max, DORM)
     
     def reinit_grid(self, p_alive: float, p_dorm: float):
@@ -137,7 +133,7 @@ class DormantLife(CellularAutomaton):
         prob = (p_dead, p_alive, p_dorm)
         self.grid = self.rng.choice(self.states, p=prob, size=dims)
 
-    def step(self):
+    def step(self) -> np.ndarray:
         """
         Perform a step in DormantLife. For alpha = 1 we get deterministic
         DormantLife, for alpha = 0 we get Game of Life.
