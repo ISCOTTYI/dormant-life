@@ -1,11 +1,12 @@
 import sys, os
 import numpy as np
 import multiprocessing
-from gol import CellularAutomaton, DormantLife
+from gol import DormantLife
 
 
-GRID_SIZE = 100
+GRID_SIZE = 20
 BASE_PATH = f"data/dormant-life/time-series/grid-size-{GRID_SIZE}"
+os.makedirs(BASE_PATH, exist_ok=True)
 
 
 def alive_dorm_time_series(dl: DormantLife,
@@ -49,8 +50,10 @@ def dormant_life_time_series(grid_size: int,
 
 def save_data(alive_data, dorm_data, alpha, header: str):
     fname = f"alpha-{str(alpha)[0]}p{str(alpha)[2:]}.dat"
+    os.makedirs(os.path.join(BASE_PATH, "alive"), exist_ok=True)
     np.savetxt(os.path.join(BASE_PATH, "alive", fname),
                (alive_data), header=header)
+    os.makedirs(os.path.join(BASE_PATH, "dorm"), exist_ok=True)
     np.savetxt(os.path.join(BASE_PATH, "dorm", fname),
                (dorm_data), header=header)
 
@@ -71,7 +74,7 @@ if __name__ == "__main__":
     np.savetxt(os.path.join(BASE_PATH, "alpha-range.dat"),
                (alphas), header="Alpha values for which data is stored.")
     
-    with multiprocessing.Pool(processes=3) as pool:
+    with multiprocessing.Pool(processes=4) as pool:
         # Use imap_unordered to apply the function to each value of alpha in 
         # parallel and yield the results as they are ready, regardless of the
         # order 

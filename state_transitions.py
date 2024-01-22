@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 
 BASE_PATH = "data/dormant-life/state-transitions/to-alive-transitions"
+os.makedirs(BASE_PATH, exist_ok=True)
 
 
 def count_transitions(pre_grid: np.ndarray, post_grid: np.ndarray,

@@ -5,6 +5,7 @@ from gol import CellularAutomaton, DormantLife
 
 
 BASE_PATH = "./data/dormant-life/extinction-time"
+os.makedirs(BASE_PATH, exist_ok=True)
 
 
 def find_extinction_time(ca: CellularAutomaton, t_max: int,

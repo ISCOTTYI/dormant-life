@@ -35,7 +35,7 @@ ytick.right : True
 # Set line widths
 axes.linewidth : 0.5
 grid.linewidth : 0.5
-lines.linewidth : 1.
+lines.linewidth : 2.
 
 # Remove legend frame
 legend.frameon : False

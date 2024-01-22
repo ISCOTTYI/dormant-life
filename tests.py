@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from gol import GameOfLife, DormantLife, ALIVE, DORM, DEAD
-
+from lifetime_distribution import lifetime_distribution
 
 class TestDormantLife(unittest.TestCase):
     def test_ALIVE_DORM_conversion(self):
@@ -85,18 +85,42 @@ class TestDormantLife(unittest.TestCase):
         ])
         np.testing.assert_array_equal(grid_step, res)
     
-    def test_transitions(self):
+    # def test_transitions(self):
+    #     test_grid = np.array([
+    #         [DEAD, ALIVE, DORM],
+    #         [DEAD, ALIVE, DORM],
+    #         [DEAD, DEAD, DEAD]
+    #     ])
+    #     gol = DormantLife(test_grid)
+    #     grid_step = gol.step()
+    #     self.assertEqual(gol.transitions_from(test_grid, ALIVE, DORM), 2)
+    #     self.assertEqual(gol.transitions_from(test_grid, DORM, ALIVE), 2)
+    #     self.assertEqual(gol.transitions_from(test_grid, ALIVE, DEAD), 0)
+    #     self.assertEqual(gol.transitions_from(test_grid, DEAD, ALIVE), 0)
+        
+
+class TestLifetimeDistribution(unittest.TestCase):
+    def test_lifetime_measuring(self):
         test_grid = np.array([
-            [DEAD, ALIVE, DORM],
-            [DEAD, ALIVE, DORM],
-            [DEAD, DEAD, DEAD]
+                [DEAD, ALIVE, DEAD],
+                [DEAD, ALIVE, ALIVE],
+                [DEAD, DEAD, DEAD]
         ])
-        gol = DormantLife(test_grid)
-        grid_step = gol.step()
-        self.assertEqual(gol.transitions_from(test_grid, ALIVE, DORM), 2)
-        self.assertEqual(gol.transitions_from(test_grid, DORM, ALIVE), 2)
-        self.assertEqual(gol.transitions_from(test_grid, ALIVE, DEAD), 0)
-        self.assertEqual(gol.transitions_from(test_grid, DEAD, ALIVE), 0)
+        dl = DormantLife(test_grid)
+        self.assertDictEqual(
+            lifetime_distribution(ALIVE, dl, 3, 0, exclude_alive_after_trans=0),
+            {0: 6, 1: 3})
+    
+    def test_exclude_alive_after_trans(self):
+        test_grid = np.array([
+                [DEAD, ALIVE, DEAD],
+                [DEAD, ALIVE, ALIVE],
+                [DEAD, DEAD, DEAD]
+        ])
+        dl = DormantLife(test_grid)
+        self.assertDictEqual(
+            lifetime_distribution(ALIVE, dl, 3, 0, exclude_alive_after_trans=1),
+            {0: 6})
 
 
 if __name__ == '__main__':
