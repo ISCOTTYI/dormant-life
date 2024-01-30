@@ -1,44 +1,42 @@
 import sys, os
 import numpy as np
 import multiprocessing
-from gol import CellularAutomaton, DormantLife
+from gol import SporeLife
+from util import random_init_grid, save_data
 
 
-BASE_PATH = "./data/dormant-life/extinction-time"
-os.makedirs(BASE_PATH, exist_ok=True)
+BASE_PATH = "./data/spore-life/extinction-time"
+PARAMS = (grid_size, q, t_max, runs, equal_step_limit) = (
+          30, 0.3701, 1_000_000, 3, 100)
+ALPHAS = np.linspace(0, 0.5, 30)
 
 
-def find_extinction_time(ca: CellularAutomaton, t_max: int,
+def find_extinction_time(sl: SporeLife, t_max: int,
                          equal_step_limit: int = 100) -> int:
     """
     Find the time step where the DormantLife dl goes extinct, where extinction
     is characterized by the number of alive cells staying constant for at least
-    equal_step_limit steps. If ca goes extinct after t_max, -1 is returned.
+    equal_step_limit steps. If sl goes extinct after t_max, -1 is returned.
     """
     assert 0 < equal_step_limit < t_max
-    assert ca.t == 0
+    assert sl.t == 0
     equal_step_counter = 0
-    while ca.t <= t_max:
+    while sl.t <= t_max:
         if equal_step_counter >= equal_step_limit:
-            return ca.t - equal_step_limit
-        old_alive_count = ca.alive_count
-        ca.step()
-        if old_alive_count == ca.alive_count:
+            return sl.t - equal_step_limit
+        old_alive_count = sl.alive_count
+        sl.step()
+        if old_alive_count == sl.alive_count:
             equal_step_counter += 1
         else:
             equal_step_counter = 0
     return -1
 
 
-def dormant_life_extinction_times(grid_size: int,
-                                  q: float,
-                                  alpha: float,
-                                  t_max: int,
-                                  runs: int,
-                                  equal_step_limit: int = 100,
-                                  progress_updates: bool = False) -> np.array:
+def extinction_time_stastistics(alpha, grid_size, q, t_max, runs, equal_step_limit,
+                                progress_updates: bool = False) -> np.array:
     """
-    Find extinction times for Dormant Life with grid_size x grid_size and
+    Find extinction times for SporeLife with grid_size x grid_size and
     inital probability for ALIVE cells q. Returns runs realizations as
     data array.
     """
@@ -47,31 +45,26 @@ def dormant_life_extinction_times(grid_size: int,
         if progress_updates:
             sys.stdout.write(f"\r{round(i/runs * 100, 1)}%")
             sys.stdout.flush()
-        init_grid = np.random.choice([0, 1], p=[1-q, q], size=[grid_size, grid_size])
-        dl = DormantLife(init_grid, alpha=alpha)
-        data[i] = find_extinction_time(dl, t_max, equal_step_limit)
+        sl = SporeLife(random_init_grid(grid_size, q), alpha=alpha)
+        data[i] = find_extinction_time(sl, t_max, equal_step_limit)
     return data
 
 
-if __name__ == "__main__":
-    alphas = np.round(np.linspace(0, 1, 75), 3)
-    np.savetxt(os.path.join(BASE_PATH, "alpha-range.dat"),
-               (alphas), header="Alpha values for which data is stored.")
+def _f(alpha):
+    print(f"\nalpha = {alpha}")
+    header = f"extinction_time.py -- Extinction times for spore life -- alpha = {alpha}, (grid_size, q, t_max, runs, equal_step_limit) = {str(PARAMS)}"
+    data = extinction_time_stastistics(alpha, *PARAMS, progress_updates=True)
+    save_data(data, param=alpha, header=header, base_path=BASE_PATH, prefix="alpha-")
 
-    def compute(alpha):
-        print(f"alpha = {alpha}")
-        fname = f"alpha-p{str(alpha)[2:]}.dat"
-        parameters = (grid_size, q, alpha, t_max, runs) = (
-            30, 0.3701, alpha, 1_000_000, 1000
-        )
-        data = dormant_life_extinction_times(*parameters, progress_updates=True)
-        np.savetxt(os.path.join(BASE_PATH, fname), (data),
-                   header=f"(grid_size, q, alpha, t_max, runs) = {str(parameters)}")
+
+if __name__ == "__main__":
+    save_data(ALPHAS, prefix="alpha-range", header="extinction_time.py -- Extinction times for spore life -- Alpha values for which data is stored",
+              base_path=BASE_PATH)
 
     # Use the with statement to create and close the pool
-    with multiprocessing.Pool() as pool:
+    with multiprocessing.Pool(processes=5) as pool:
         # Use imap_unordered to apply the function to each value of alpha in parallel
         # and yield the results as they are ready, regardless of the order
-        for _ in pool.imap_unordered(compute, alphas):
+        for _ in pool.imap_unordered(_f, ALPHAS):
             pass
 

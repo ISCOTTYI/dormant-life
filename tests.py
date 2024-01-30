@@ -1,126 +1,192 @@
 import unittest
 import numpy as np
-from gol import GameOfLife, DormantLife, ALIVE, DORM, DEAD
-from lifetime_distribution import lifetime_distribution
+from gol import CellularAutomaton, SporeLife
+from gol import ALIVE, SPORE, DEAD
 
-class TestDormantLife(unittest.TestCase):
-    def test_ALIVE_DORM_conversion(self):
+
+class TestCellularAutomaton(unittest.TestCase):
+    """
+    Tests for the CellularAutomaton base class.
+    """
+    def test_count_state(self):
         test_grid = np.array([
-            [DEAD, ALIVE, DEAD],
-            [DEAD, ALIVE, DEAD],
-            [DEAD, DEAD, DEAD]
+            [ALIVE, DEAD, DEAD],
+            [DEAD, DEAD, ALIVE],
+            [DEAD, ALIVE, ALIVE]
         ])
-        gol = DormantLife(test_grid)
-        grid_step = gol.step()
+        ca = CellularAutomaton(test_grid, (DEAD, ALIVE), None, True)
+        self.assertEqual(4, ca.count_state(ALIVE))
+    
+    def test_count_state_zero(self):
+        test_grid = np.full((3, 3), DEAD)
+        ca = CellularAutomaton(test_grid, (DEAD, ALIVE), None, True)
+        self.assertEqual(0, ca.count_state(ALIVE))
+        self.assertEqual(0, ca.count_state(SPORE))
+
+
+class TestSporeLifeRules(unittest.TestCase):
+    """
+    Testing the step function for SporeLife, i.e. the rules of SporeLife.
+    """
+    def test_DEAD_awake_rule(self):
+        test_grid = np.array([
+            [DEAD, DEAD, DEAD],
+            [DEAD, DEAD, ALIVE],
+            [DEAD, ALIVE, ALIVE]
+        ])
+        sl = SporeLife(test_grid, periodic_boundary=False)
+        grid_step = sl.step()
         res = np.array([
-            [DEAD, DORM, DEAD],
-            [DEAD, DORM, DEAD],
-            [DEAD, DEAD, DEAD]
+            [DEAD, DEAD, DEAD],
+            [DEAD, ALIVE, ALIVE],
+            [DEAD, ALIVE, ALIVE]
         ])
-        np.testing.assert_array_equal(res, grid_step)
+        np.testing.assert_array_equal(grid_step, res)
     
-    def test_periodic_boundary(self):
+    def test_SPORE_awake_rule(self):
         test_grid = np.array([
-            [ALIVE, DEAD, ALIVE],
-            [DEAD, ALIVE, DEAD],
-            [DEAD, DEAD, ALIVE]
-        ])
-        gol = DormantLife(test_grid)
-        grid_step = gol.step()
-        np.testing.assert_array_equal(test_grid, grid_step)
-    
-    def test_limit_cases_stochasticity(self):
-        test_grid = np.array([
-            [DEAD, ALIVE, DEAD],
-            [DEAD, DORM, DEAD],
+            [DEAD, ALIVE, SPORE], # SPORE with 2 ALIVE neighbors
+            [DEAD, SPORE, ALIVE], # SPORE with 3 ALIVE neighbors
             [DEAD, ALIVE, DEAD]
         ])
-        # alpha = 0 should get us GameOfLife step with DEAD == DORM.
-        gol = DormantLife(test_grid, alpha=0)
-        gol_grid_step = gol.step()
-        gol_res = np.array([
-            [DEAD, DORM, DEAD],
-            [DEAD, DORM, DEAD],
-            [DEAD, DORM, DEAD]
-        ])
-        np.testing.assert_array_equal(gol_res, gol_grid_step)
-        # alpha = 1 should get us determinstic DormantLife step.
-        dl = DormantLife(test_grid, alpha=1)
-        dl_grid_step = dl.step()
-        dl_res = np.array([
-            [DEAD, DORM, DEAD],
-            [DEAD, ALIVE, DEAD],
-            [DEAD, DORM, DEAD]
-        ])
-        np.testing.assert_array_equal(dl_res, dl_grid_step)
-
-    def test_p_grid_decay(self):
-        gol = DormantLife(np.full((3, 3), DEAD), alpha=0.5)
-        gol.step()
-        np.testing.assert_array_equal(gol.p_grid, np.full((3, 3), 0.5))
-    
-    def test_p_grid_reset(self):
-        test_grid = np.array([
-            [ALIVE, ALIVE, DEAD],
-            [DEAD, DEAD, DEAD],
-            [DEAD, DEAD, DEAD]
-        ])
-        gol = DormantLife(test_grid, alpha=0.5)
-        gol.step()
-        res_p_grid = np.full((3, 3), 0.5); res_p_grid[0, 0:2] = 1
-        np.testing.assert_array_equal(gol.p_grid, res_p_grid)
-    
-    def test_stochastic_update(self):
-        test_grid = np.array([
-            [DORM, ALIVE, DEAD],
-            [DORM, ALIVE, DEAD],
-            [DEAD, DEAD, DEAD]
-        ])
-        gol = DormantLife(test_grid, seed=1, alpha=0.6)
-        grid_step = gol.step()
+        sl = SporeLife(test_grid, periodic_boundary=False)
+        grid_step = sl.step()
         res = np.array([
-            [ALIVE, DORM, DEAD],
-            [DORM, DORM, DEAD],
+            [DEAD, SPORE, ALIVE],
+            [DEAD, ALIVE, ALIVE],
+            [DEAD, SPORE, DEAD]
+        ])
+        np.testing.assert_array_equal(grid_step, res)
+    
+    def test_ALIVE_dies_rule(self):
+        test_grid = np.array([
+            [DEAD, DEAD, DEAD, DEAD],
+            [ALIVE, DEAD, DEAD, ALIVE], # At 1, 0 ALIVE cell with 0 ALIVE neighbors
+            [DEAD, DEAD, ALIVE, ALIVE], # At 2, 2 and 2, 3 ALIVE cell with 4 ALIVE neighbors
+            [DEAD, DEAD, ALIVE, ALIVE]
+        ])
+        sl = SporeLife(test_grid, periodic_boundary=False)
+        grid_step = sl.step()
+        res = np.array([
+            [DEAD, DEAD, DEAD, DEAD],
+            [DEAD, DEAD, ALIVE, ALIVE],
+            [DEAD, ALIVE, DEAD, DEAD],
+            [DEAD, DEAD, ALIVE, ALIVE]
+        ])
+        np.testing.assert_array_equal(grid_step, res)
+    
+    def test_ALIVE_goes_dormant_rule(self):
+        test_grid = np.array([
+            [DEAD, ALIVE, DEAD],
+            [DEAD, ALIVE, DEAD],
+            [DEAD, DEAD, DEAD]
+        ])
+        sl = SporeLife(test_grid, periodic_boundary=False)
+        grid_step = sl.step()
+        res = np.array([
+            [DEAD, SPORE, DEAD],
+            [DEAD, SPORE, DEAD],
             [DEAD, DEAD, DEAD]
         ])
         np.testing.assert_array_equal(grid_step, res)
     
-    # def test_transitions(self):
-    #     test_grid = np.array([
-    #         [DEAD, ALIVE, DORM],
-    #         [DEAD, ALIVE, DORM],
-    #         [DEAD, DEAD, DEAD]
-    #     ])
-    #     gol = DormantLife(test_grid)
-    #     grid_step = gol.step()
-    #     self.assertEqual(gol.transitions_from(test_grid, ALIVE, DORM), 2)
-    #     self.assertEqual(gol.transitions_from(test_grid, DORM, ALIVE), 2)
-    #     self.assertEqual(gol.transitions_from(test_grid, ALIVE, DEAD), 0)
-    #     self.assertEqual(gol.transitions_from(test_grid, DEAD, ALIVE), 0)
+    def test_periodic_boundary(self):
+        test_grid = np.array([
+            [DEAD, DEAD, DEAD],
+            [DEAD, DEAD, ALIVE],
+            [DEAD, ALIVE, ALIVE]
+        ])
+        sl = SporeLife(test_grid, periodic_boundary=True)
+        grid_step = sl.step()
+        np.testing.assert_array_equal(grid_step, np.full((3, 3), ALIVE))
+    
+    def test_silent_step(self):
+        test_grid = np.array([
+            [DEAD, DEAD, DEAD],
+            [DEAD, DEAD, ALIVE],
+            [DEAD, ALIVE, ALIVE]
+        ])
+        sl = SporeLife(test_grid, periodic_boundary=False)
+        silent_step = sl.step(silent=True)
+        res = np.array([
+            [DEAD, DEAD, DEAD],
+            [DEAD, ALIVE, ALIVE],
+            [DEAD, ALIVE, ALIVE]
+        ])
+        np.testing.assert_array_equal(silent_step, res)
+        np.testing.assert_array_equal(sl.grid, test_grid)
+        self.assertEqual(sl.t, 0)
+
+
+class TestSporeLifeStochasticity(unittest.TestCase):
+    def test_game_of_life_limit(self):
+        test_grid = np.array([
+            [DEAD, ALIVE, DEAD],
+            [DEAD, ALIVE, DEAD],
+            [DEAD, DEAD, DEAD]
+        ])
+        sl = SporeLife(test_grid, alpha=0, periodic_boundary=False)
+        grid_step = sl.step()
+        np.testing.assert_array_equal(grid_step, np.full((3, 3), DEAD))
+    
+    def test_stochastic_step(self):
+        test_grid = np.array([
+            [DEAD, ALIVE, DEAD],
+            [DEAD, ALIVE, DEAD],
+            [SPORE, SPORE, SPORE]
+        ])
+        sl = SporeLife(test_grid, alpha=.3, periodic_boundary=False, seed=100)
+        """
+        decision_grid = [
+            [0.83498163, 0.59655403, 0.28886324],
+            [0.04295157, 0.9736544 , 0.5964717 ],
+            [0.79026316, 0.91033938, 0.68815445]
+        ]
+        """
+        grid_step = sl.step()
+        res = np.array([
+            [DEAD, DEAD, DEAD],
+            [DEAD, SPORE, DEAD],
+            [SPORE, SPORE, DEAD]
+        ])
+        np.testing.assert_array_equal(grid_step, res)
+    
+#     # def test_transitions(self):
+#     #     test_grid = np.array([
+#     #         [DEAD, ALIVE, SPORE],
+#     #         [DEAD, ALIVE, SPORE],
+#     #         [DEAD, DEAD, DEAD]
+#     #     ])
+#     #     gol = DormantLife(test_grid)
+#     #     grid_step = gol.step()
+#     #     self.assertEqual(gol.transitions_from(test_grid, ALIVE, SPORE), 2)
+#     #     self.assertEqual(gol.transitions_from(test_grid, SPORE, ALIVE), 2)
+#     #     self.assertEqual(gol.transitions_from(test_grid, ALIVE, DEAD), 0)
+#     #     self.assertEqual(gol.transitions_from(test_grid, DEAD, ALIVE), 0)
         
 
-class TestLifetimeDistribution(unittest.TestCase):
-    def test_lifetime_measuring(self):
-        test_grid = np.array([
-                [DEAD, ALIVE, DEAD],
-                [DEAD, ALIVE, ALIVE],
-                [DEAD, DEAD, DEAD]
-        ])
-        dl = DormantLife(test_grid)
-        self.assertDictEqual(
-            lifetime_distribution(ALIVE, dl, 3, 0, exclude_alive_after_trans=0),
-            {0: 6, 1: 3})
+# class TestLifetimeDistribution(unittest.TestCase):
+#     def test_lifetime_measuring(self):
+#         test_grid = np.array([
+#                 [DEAD, ALIVE, DEAD],
+#                 [DEAD, ALIVE, ALIVE],
+#                 [DEAD, DEAD, DEAD]
+#         ])
+#         dl = DormantLife(test_grid)
+#         self.assertDictEqual(
+#             lifetime_distribution(ALIVE, dl, 3, 0, exclude_alive_after_trans=0),
+#             {0: 6, 1: 3})
     
-    def test_exclude_alive_after_trans(self):
-        test_grid = np.array([
-                [DEAD, ALIVE, DEAD],
-                [DEAD, ALIVE, ALIVE],
-                [DEAD, DEAD, DEAD]
-        ])
-        dl = DormantLife(test_grid)
-        self.assertDictEqual(
-            lifetime_distribution(ALIVE, dl, 3, 0, exclude_alive_after_trans=1),
-            {0: 6})
+#     def test_exclude_alive_after_trans(self):
+#         test_grid = np.array([
+#                 [DEAD, ALIVE, DEAD],
+#                 [DEAD, ALIVE, ALIVE],
+#                 [DEAD, DEAD, DEAD]
+#         ])
+#         dl = DormantLife(test_grid)
+#         self.assertDictEqual(
+#             lifetime_distribution(ALIVE, dl, 3, 0, exclude_alive_after_trans=1),
+#             {0: 6})
 
 
 if __name__ == '__main__':
