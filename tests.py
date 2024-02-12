@@ -116,6 +116,21 @@ class TestSporeLifeRules(unittest.TestCase):
         np.testing.assert_array_equal(silent_step, res)
         np.testing.assert_array_equal(sl.grid, test_grid)
         self.assertEqual(sl.t, 0)
+    
+    def test_multistep(self):
+        test_grid = np.array([ # blinker
+            [DEAD, DEAD, DEAD],
+            [DEAD, SPORE, ALIVE],
+            [DEAD, ALIVE, SPORE]
+        ])
+        res = np.array([
+            [DEAD, DEAD, DEAD],
+            [DEAD, ALIVE, SPORE],
+            [DEAD, SPORE, ALIVE]
+        ])
+        sl = SporeLife(test_grid, periodic_boundary=False)
+        np.testing.assert_array_equal(sl.step(), res)
+        np.testing.assert_array_equal(sl.step(), test_grid)
 
 
 class TestSporeLifeStochasticity(unittest.TestCase):
@@ -165,29 +180,68 @@ class TestSporeLifeStochasticity(unittest.TestCase):
 #     #     self.assertEqual(gol.transitions_from(test_grid, DEAD, ALIVE), 0)
         
 
-# class TestLifetimeDistribution(unittest.TestCase):
-#     def test_lifetime_measuring(self):
-#         test_grid = np.array([
-#                 [DEAD, ALIVE, DEAD],
-#                 [DEAD, ALIVE, ALIVE],
-#                 [DEAD, DEAD, DEAD]
-#         ])
-#         dl = DormantLife(test_grid)
-#         self.assertDictEqual(
-#             lifetime_distribution(ALIVE, dl, 3, 0, exclude_alive_after_trans=0),
-#             {0: 6, 1: 3})
+from lifetime_distribution import lifetime_distribution
+
+class TestLifetimeDistribution(unittest.TestCase):
+    def test_lifetime_measuring(self):
+        test_grid = np.array([
+                [DEAD, ALIVE, DEAD],
+                [DEAD, ALIVE, ALIVE],
+                [DEAD, DEAD, DEAD]
+        ])
+        sl = SporeLife(test_grid)
+        self.assertDictEqual(
+            lifetime_distribution(ALIVE, sl, 3, 0, ignore_transient_dynamics=0),
+            {0: 6, 1: 3})
     
-#     def test_exclude_alive_after_trans(self):
-#         test_grid = np.array([
-#                 [DEAD, ALIVE, DEAD],
-#                 [DEAD, ALIVE, ALIVE],
-#                 [DEAD, DEAD, DEAD]
-#         ])
-#         dl = DormantLife(test_grid)
-#         self.assertDictEqual(
-#             lifetime_distribution(ALIVE, dl, 3, 0, exclude_alive_after_trans=1),
-#             {0: 6})
+    def test_lifetime_no_dynamics(self):
+        test_grid = np.array([
+            [DEAD, ALIVE, ALIVE],
+            [DEAD, ALIVE, ALIVE],
+            [DEAD, DEAD, DEAD]
+        ])
+        sl = SporeLife(test_grid)
+        self.assertDictEqual(
+            lifetime_distribution(ALIVE, sl, 3, 0, ignore_transient_dynamics=0),
+            {})
+    
+    def test_lifetime_blinker(self):
+        test_grid = np.array([
+            [DEAD, ALIVE, SPORE],
+            [DEAD, ALIVE, SPORE],
+            [DEAD, DEAD, DEAD]
+        ])
+        sl = SporeLife(test_grid)
+        self.assertDictEqual(
+            lifetime_distribution(ALIVE, sl, 2, 0, ignore_transient_dynamics=1),
+            {0: 2})
+    
+    def test_longer_lifetimes(self):
+        test_grid = np.array([
+            [ALIVE, DEAD, ALIVE],
+            [ALIVE, DEAD, ALIVE],
+            [DEAD, ALIVE, DEAD]
+        ])
+        sl = SporeLife(test_grid, periodic_boundary=False)
+        self.assertDictEqual(
+            lifetime_distribution(ALIVE, sl, 7, 0, ignore_transient_dynamics=0),
+            {0:7, 1:2, 2:1})
+        sl = SporeLife(test_grid, periodic_boundary=False)
+        self.assertDictEqual(
+            lifetime_distribution(SPORE, sl, 7, 0, ignore_transient_dynamics=0),
+            {0:4})
+    
+    def test_ignore_transient_dynamics(self):
+        test_grid = np.array([
+                [DEAD, ALIVE, DEAD],
+                [DEAD, ALIVE, ALIVE],
+                [DEAD, DEAD, DEAD]
+        ])
+        dl = SporeLife(test_grid)
+        self.assertDictEqual(
+            lifetime_distribution(ALIVE, dl, 3, 0, ignore_transient_dynamics=1),
+            {0: 6})
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
