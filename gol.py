@@ -37,7 +37,7 @@ class CellularAutomaton():
     def count_state(self, state: int):
         return np.count_nonzero(self.grid == state)
     
-    def compute_neighbor_counts_for(self, state: int, periodic_boundary=True):
+    def neighborhood_grid(self, state: int, periodic_boundary=True):
         filtered_grid = (self.grid == state).astype(np.intc)
         mode = "wrap" if periodic_boundary else "constant"
         c = convolve(filtered_grid, self.conv_ker, mode=mode, cval=0)
@@ -75,7 +75,7 @@ class GameOfLife(CellularAutomaton):
         # 0: dead, 1: alive
         self.states = np.array([DEAD, ALIVE])
         super().__init__(init_grid, self.states, seed, periodic_boundary)
-        self.alive_neighbor_counts = None
+        self.life_neighborhood_grid = self.neighborhood_grid(ALIVE, self.periodic_boundary)
     
     @property
     def alive_count(self):
@@ -99,14 +99,15 @@ class GameOfLife(CellularAutomaton):
         ngrid = self.grid.copy()
         # Create array with 8-neighbor sums by convolution, using periodic
         # boundary conditions.
-        self.alive_neighbor_counts = c = self.compute_neighbor_counts_for(
-            ALIVE, periodic_boundary=self.periodic_boundary)
+        c = self.life_neighborhood_grid
         # Apply rules of game of life
         ngrid[(self.grid == ALIVE) & ((c < 2) | (c > 3))] = DEAD
         ngrid[(self.grid == DEAD) & (c == 3)] = ALIVE
         # Update grid and time
         if not silent:
             self.grid = ngrid
+            self.life_neighborhood_grid = self.neighborhood_grid(
+                ALIVE, self.periodic_boundary)
             self.t += 1
         return ngrid
     
@@ -121,9 +122,9 @@ class SporeLife(CellularAutomaton):
         # 0: dead, 1: alive, 2: spore
         self.states = np.array([DEAD, ALIVE, SPORE])
         super().__init__(init_grid, self.states, seed, periodic_boundary)
-        
-        self.alive_neighbor_counts = None
 
+        self.life_neighborhood_grid = self.neighborhood_grid(ALIVE, self.periodic_boundary)
+        
         assert 0 <= alpha <= 1
         self.alpha = alpha
     
@@ -158,8 +159,7 @@ class SporeLife(CellularAutomaton):
         ngrid = self.grid.copy()
         # Create array with 8-neighbor ALIVE counts by convolution, using
         # periodic boundary conditions.
-        self.alive_neighbor_counts = c = self.compute_neighbor_counts_for(
-            ALIVE, periodic_boundary=self.periodic_boundary)
+        c = self.life_neighborhood_grid
         # Apply rules of game of life w/ dormancy
         # DEAD awake
         ngrid[(self.grid == DEAD)
@@ -176,6 +176,8 @@ class SporeLife(CellularAutomaton):
         # Update grid and time
         if not silent:
             self.grid = ngrid
+            self.life_neighborhood_grid = self.neighborhood_grid(
+                ALIVE, self.periodic_boundary)
             self.t += 1
         return ngrid
 
@@ -193,5 +195,7 @@ class SporeLife(CellularAutomaton):
         # Update grid and time
         if not silent:
             self.grid = ngrid
+            self.life_neighborhood_grid = self.neighborhood_grid(
+                ALIVE, self.periodic_boundary)
             self.t += 1
         return ngrid
