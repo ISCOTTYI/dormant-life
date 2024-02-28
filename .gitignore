@@ -7,3 +7,5 @@ OLD*
 *.backup
 *.dat
 _*.py
+img
+plots.ipynb
