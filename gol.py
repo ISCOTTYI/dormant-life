@@ -55,7 +55,8 @@ class CellularAutomaton():
             self.step()
         return self.grid
     
-    def state_count_time_series(self, t_max: int, state: int) -> np.ndarray:
+    def state_count_time_series(self, t_max: int, state: int,
+                                **kwargs) -> np.ndarray:
         """
         Step the system until t_max and return the counts of state at each time
         step on the way.
@@ -65,7 +66,7 @@ class CellularAutomaton():
         data = np.zeros(t_max+1 - t0)
         while self.t <= t_max:
             data[self.t - t0] = self.count_state(state)
-            self.step()
+            self.step(**kwargs)
         return data
             
 
@@ -81,8 +82,8 @@ class GameOfLife(CellularAutomaton):
     def alive_count(self):
         return self.count_state(ALIVE)
     
-    def alive_count_time_series(self, t_max: int) -> np.array:
-        return self.state_count_time_series(t_max, ALIVE)
+    def alive_count_time_series(self, t_max: int, **kwargs) -> np.array:
+        return self.state_count_time_series(t_max, ALIVE, **kwargs)
         
     def reinit_grid(self, p_alive):
         assert 0 <= p_alive <= 1
@@ -136,11 +137,11 @@ class SporeLife(CellularAutomaton):
     def spore_count(self):
         return self.count_state(SPORE)
     
-    def alive_count_time_series(self, t_max: int) -> np.ndarray:
-        return self.state_count_time_series(t_max, ALIVE)
+    def alive_count_time_series(self, t_max: int, **kwargs) -> np.ndarray:
+        return self.state_count_time_series(t_max, ALIVE, **kwargs)
     
-    def spore_count_time_series(self, t_max: int) -> np.ndarray:
-        return self.state_count_time_series(t_max, SPORE)
+    def spore_count_time_series(self, t_max: int, **kwargs) -> np.ndarray:
+        return self.state_count_time_series(t_max, SPORE, **kwargs)
     
     def reinit_grid(self, p_alive: float, p_dorm: float):
         assert 0 <= p_alive <= 1 and 0 <= p_dorm <= 1 and p_alive + p_dorm < 1
@@ -149,12 +150,15 @@ class SporeLife(CellularAutomaton):
         prob = (p_dead, p_alive, p_dorm)
         self.grid = self.rng.choice(self.states, p=prob, size=dims)
     
-    def deterministic_step(self, silent: bool = False) -> np.ndarray:
+    def deterministic_step(self, silent: bool = False,
+                           overcrowd_dormancy: bool = False) -> np.ndarray:
         """
         Perform a step in SporeLife without stochasticity, i.e. ignore the given
         alpha and pretend that alpha = 1.
         A silent step is only computed and returned but does not count as a time
         step and is not stored.
+        If overcrowd_dormancy is true, an ALIVE cell with 4 ALIVE neighbors goes
+        dormant, else it just dies.
         """
         ngrid = self.grid.copy()
         # Create array with 8-neighbor ALIVE counts by convolution, using
@@ -167,12 +171,20 @@ class SporeLife(CellularAutomaton):
         # DORMANT awake
         ngrid[(self.grid == SPORE)
               & ((c == 2) | (c == 3))] = ALIVE
+        if overcrowd_dormancy:
+            overcrowd_lim = 4
+        else:
+            overcrowd_lim = 3
         # ALIVE dies
         ngrid[(self.grid == ALIVE)
-              & ((c < 1) | (c > 3))] = DEAD
+              & ((c < 1) | (c > overcrowd_lim))] = DEAD
         # ALIVE goes DORMANT
-        ngrid[(self.grid == ALIVE)
-              & (c == 1)] = SPORE
+        if overcrowd_dormancy:
+            ngrid[(self.grid == ALIVE)
+                & ((c == 1) | (c == 4))] = SPORE
+        else:
+            ngrid[(self.grid == ALIVE)
+                & (c == 1)] = SPORE
         # Update grid and time
         if not silent:
             self.grid = ngrid
@@ -181,13 +193,17 @@ class SporeLife(CellularAutomaton):
             self.t += 1
         return ngrid
 
-    def step(self, silent: bool = False) -> np.ndarray:
+    def step(self, silent: bool = False,
+             overcrowd_dormancy: bool = False) -> np.ndarray:
         """
         Perform a (possibly stochastic) step in SporeLife.
         A silent step is only computed and returned but does not count as a time
         step and is not stored.
+        If overcrowd_dormancy is true, an ALIVE cell with 4 ALIVE neighbors goes
+        dormant, else it just dies.
         """
-        ngrid = self.deterministic_step(silent=True)
+        ngrid = self.deterministic_step(silent=True,
+                                        overcrowd_dormancy=overcrowd_dormancy)
         # Randomly kill SPOREs in ngrid based on alpha
         decision_grid = self.rng.random((self.N, self.N))
         ngrid[(ngrid == SPORE)
