@@ -1,4 +1,5 @@
 # Spore Life
+Repository accompanying [arXiv:2406.13765](https://arxiv.org/abs/2406.13765).
 
 ## Installation Instructions
 * Create and activate virtual environment using `python3 -m venv ./venv && source venv/bin/activate`.
