@@ -56,57 +56,6 @@ class MFSporeLife:
         return self.alive_densities, self.spore_densities, self.dead_densities
 
 
-
-# # ------------------------
-# # --- one update step
-# # ------------------------
-# def oneUpdate(rhoLife, rhoDead, alpha, nNeighbors=8):
-#   # nProb = nNeighbors + 1
-#   rhoSpore = 1.0 - rhoLife - rhoDead
-#   print(f'{rhoLife:7.4f} {rhoDead:7.4f} {rhoSpore:7.4f}')
-#   print("---")
-# #
-#   pLife = [binom.pmf(nn, nNeighbors, rhoLife) for nn in range(nNeighbors)]
-# #
-#   rhoSpore *= alpha                         # not decaying
-#   newSpore = rhoSpore * (1.0 - pLife[2] - pLife[3])
-#   newSpore += rhoLife * pLife[1]
-# #
-#   newLife = rhoLife * (pLife[2] + pLife[3]) # having a good day
-#   newLife += rhoSpore * (pLife[2] + pLife[3])
-#   newLife += rhoDead * pLife[3]
-# #
-# #   newSpore *= alpha # alpha decay 
-#   newDead = 1.0 - newLife - newSpore
-#   print(f'{newLife:7.4f} {newDead:7.4f} {newSpore:7.4f}')
-#   return newLife, newDead, newSpore
-
-# ------------------------
-# --- main
-# ------------------------
-
-# rhoLife  = 0.35 + 0.1*random.uniform(0,1)
-# rhoSpore = random.uniform(0,1)*(1.0-rhoLife)
-# rhoSpore = 1.0 - rhoLife
-# rhoDead  = 1.0 - rhoLife - rhoSpore
-# alpha    = 1
-# nIter = 100
-
-# rhoLifes = [rhoLife]
-# rhoSpores = [rhoSpore]
-
-# for iIter in range(nIter):
-# #   print(f'{rhoLife:7.4f} {rhoDead:7.4f} {rhoSpore:7.4f}')
-#   rhoLife, rhoDead, rhoSpore = oneUpdate(rhoLife, rhoDead, alpha, nNeighbors=8)
-# #   rhoLife, rhoDead, rhoSpore = oneUpdate(rhoLife, rhoSpore, alpha, nNeighbors=8)
-#   rhoLifes.append(rhoLife)
-#   rhoSpores.append(rhoSpore)
-
-# plt.plot(rhoLifes, label="A", c="tab:orange")
-# plt.plot(rhoSpores, label="I", c="tab:blue")
-# plt.legend()
-# plt.show()
-
 if __name__ == "__main__":
     rhoLife  = 0.35 + 0.1*random.uniform(0,1)
     rhoSpore = random.uniform(0,1)*(1.0-rhoLife)
