@@ -42,6 +42,21 @@ class CellularAutomaton():
         mode = "wrap" if periodic_boundary else "constant"
         c = convolve(filtered_grid, self.conv_ker, mode=mode, cval=0)
         return c
+
+    def scramble(self, grid=None):
+        """
+        Scrambles the grid, i.e. randomly rearanges the cells. If no grid is
+        passed, uses stored grid, else, uses passed grid.
+        """
+        if grid is None:
+            grid = self.grid
+            self.grid = None
+        flat = grid.flatten()
+        self.rng.shuffle(flat)
+        grid = flat.reshape((self.N, self.N))
+        if self.grid is None:
+            self.grid = grid
+        return grid
     
     def reinit_grid(self):
         raise NotImplementedError("Instance of CellularAutomaton may not be initialized!")
@@ -91,7 +106,7 @@ class GameOfLife(CellularAutomaton):
         dims = (self.N, self.N)
         self.grid = self.rng.choice(self.states, p=(p_dead, p_alive), size=dims)
     
-    def step(self, silent: bool = False) -> np.ndarray:
+    def step(self, silent: bool = False, scramble: bool = False) -> np.ndarray:
         """
         Perform a step in Game of Life.
         A silent step is only computed and returned but does not count as a time
@@ -104,6 +119,9 @@ class GameOfLife(CellularAutomaton):
         # Apply rules of game of life
         ngrid[(self.grid == ALIVE) & ((c < 2) | (c > 3))] = DEAD
         ngrid[(self.grid == DEAD) & (c == 3)] = ALIVE
+        # Scramble
+        if scramble:
+            ngrid = self.scramble(ngrid)
         # Update grid and time
         if not silent:
             self.grid = ngrid
@@ -151,7 +169,8 @@ class SporeLife(CellularAutomaton):
         self.grid = self.rng.choice(self.states, p=prob, size=dims)
     
     def deterministic_step(self, silent: bool = False,
-                           overcrowd_dormancy: bool = False) -> np.ndarray:
+                           overcrowd_dormancy: bool = False,
+                           scramble: bool = False) -> np.ndarray:
         """
         Perform a step in SporeLife without stochasticity, i.e. ignore the given
         alpha and pretend that alpha = 1.
@@ -159,6 +178,7 @@ class SporeLife(CellularAutomaton):
         step and is not stored.
         If overcrowd_dormancy is true, an ALIVE cell with 4 ALIVE neighbors goes
         dormant, else it just dies.
+        If scramble is true, scrambles the grid after performing the updates.
         """
         ngrid = self.grid.copy()
         # Create array with 8-neighbor ALIVE counts by convolution, using
@@ -185,6 +205,9 @@ class SporeLife(CellularAutomaton):
         else:
             ngrid[(self.grid == ALIVE)
                 & (c == 1)] = SPORE
+        # Scramble
+        if scramble:
+            ngrid = self.scramble(ngrid)
         # Update grid and time
         if not silent:
             self.grid = ngrid
@@ -194,7 +217,8 @@ class SporeLife(CellularAutomaton):
         return ngrid
 
     def step(self, silent: bool = False,
-             overcrowd_dormancy: bool = False) -> np.ndarray:
+             overcrowd_dormancy: bool = False,
+             scramble: bool = False) -> np.ndarray:
         """
         Perform a (possibly stochastic) step in SporeLife.
         A silent step is only computed and returned but does not count as a time
@@ -203,7 +227,8 @@ class SporeLife(CellularAutomaton):
         dormant, else it just dies.
         """
         ngrid = self.deterministic_step(silent=True,
-                                        overcrowd_dormancy=overcrowd_dormancy)
+                                        overcrowd_dormancy=overcrowd_dormancy,
+                                        scramble=scramble)
         # Randomly kill SPOREs in ngrid based on alpha
         decision_grid = self.rng.random((self.N, self.N))
         ngrid[(ngrid == SPORE)

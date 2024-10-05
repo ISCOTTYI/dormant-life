@@ -7,8 +7,10 @@ axes.prop_cycle : cycler('color', ['0C5DA5', 'FF2C00', '00B945', 'FF9500', '845B
 #     figsize = (2*axes_width + wspace*axes_width, axes_height)
 # With defaults:
 #     figsize = (7.2, 3.2)
-figure.figsize : 3.2, 3.2
-figure.subplot.wspace : 0.25
+figure.figsize : 2.5, 2.5
+# figure.subplot.wspace : 0.25
+
+figure.constrained_layout.use : True
 
 # Set x axis
 xtick.direction : in
@@ -48,13 +50,13 @@ axes.formatter.use_mathtext : True
 mathtext.fontset : cm
 
 # Font sizes
-font.size : 12
-axes.titlesize : 12
-axes.labelsize : 12
-xtick.labelsize : 12
-ytick.labelsize : 12
-legend.fontsize : 12
-figure.titlesize : 12
+font.size : 10
+axes.titlesize : 10
+axes.labelsize : 10
+xtick.labelsize : 10
+ytick.labelsize : 10
+legend.fontsize : 10
+figure.titlesize : 10
 
 # Use LaTeX for math formatting
 text.usetex : True
