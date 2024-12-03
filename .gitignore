@@ -1,12 +1,14 @@
 __pycache__
 venv/
 .vscode
-simulation_claudius.py
 OLD*
 .DS_Store
 *.backup
 *.dat
 _*.py
 img
-plots.ipynb
 plots-old.ipynb
+plots-backup.ipynb
+plots-unorganized.ipynb
+temp/
+data
