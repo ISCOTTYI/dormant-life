@@ -3,13 +3,13 @@ import matplotlib.animation as animation
 import numpy as np
 from matplotlib.colors import ListedColormap
 from gol import GameOfLife, SporeLife, DEAD, ALIVE, SPORE
-from util import random_init_grid
+from util import random_patch
 
 if __name__ == "__main__":
-    init_grid = random_init_grid(30)
+    init_grid = random_patch(30, 7, (10, 15), seed=100)
     # init_grid = random_init_grid(30, q=0.17)
     gol = GameOfLife(init_grid)
-    dl = SporeLife(init_grid, alpha=0)
+    dl = SporeLife(init_grid, alpha=1)
     colors = ["white", "tab:orange", "tab:blue"]
     cmap = ListedColormap(colors)
     fig, ax = plt.subplots(figsize=(7.2, 3.2), ncols=2)
@@ -28,11 +28,12 @@ if __name__ == "__main__":
         mat_dl.set_data(dl.grid)
         ax[0].set(title=r"Game of Life: $N_A = %d$"%gol.alive_count)
         ax[1].set(title=r"Spore Life ($\alpha = 1$): $N_A = %d$"%dl.alive_count)
-        gol.step(overcrowd_birth_p=0.5)
-        dl.step(overcrowd_birth_p=0.5)
+        gol.step()
+        dl.step()
         time_text.set_text(f"time = {frame}")
-    ani = animation.FuncAnimation(fig, update, interval=10, save_count=100, frames=10000)
+    ani = animation.FuncAnimation(fig, update, interval=100, save_count=100, frames=150)
     # Save the animation as a .gif file
-    # fig.tight_layout()
-    # ani.save('./img/spore-life-new-time.mp4', writer='ffmpeg', fps=30, dpi=500)
+    fig.tight_layout()
+    # ani.save('./img/spore-life-patch.mp4', writer='ffmpeg', fps=30, dpi=500)
+    ani.save('./img/spore-life-patch.gif', writer='imagemagick', fps=30, dpi=500)
     plt.show()

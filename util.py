@@ -12,6 +12,21 @@ def random_init_grid(grid_size: int,
     return rng.choice([0, 1], p=[1-q, q], size=[grid_size, grid_size])
 
 
+def random_patch(grid_size: int, patch_size: int, patch_top_left: tuple[int],
+                 q: float = 0.3701, seed=None) -> np.ndarray:
+    if seed:
+        rng = np.random.default_rng(seed)
+    else:
+        rng = np.random.default_rng()
+    assert 0 <= q <= 1
+    grid = np.zeros((grid_size, grid_size))
+    patch = rng.choice([0, 1], p=[1-q, q], size=[patch_size, patch_size])
+    i, j = patch_top_left
+    assert i + patch_size <= grid_size and j + patch_size <= grid_size
+    grid[i:i+patch_size, j:j+patch_size] = patch
+    return grid
+
+
 def save_data(data, param=None, header="", base_path=None, prefix=None,
               sub_path=None, overwrite_protection=True):
     # data: one or more numpy arrays

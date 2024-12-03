@@ -106,7 +106,8 @@ class GameOfLife(CellularAutomaton):
         dims = (self.N, self.N)
         self.grid = self.rng.choice(self.states, p=(p_dead, p_alive), size=dims)
     
-    def step(self, silent: bool = False, scramble: bool = False) -> np.ndarray:
+    def step(self, silent: bool = False, scramble: bool = False,
+             overcrowd_birth_p: float = None) -> np.ndarray:
         """
         Perform a step in Game of Life.
         A silent step is only computed and returned but does not count as a time
@@ -118,6 +119,11 @@ class GameOfLife(CellularAutomaton):
         c = self.life_neighborhood_grid
         # Apply rules of game of life
         ngrid[(self.grid == ALIVE) & ((c < 2) | (c > 3))] = DEAD
+        # Birth with 4 ALIVE neighbors with probability overcrowd_birth_p
+        if overcrowd_birth_p is not None:
+            decision_grid = self.rng.random((self.N, self.N))
+            ngrid[(self.grid == DEAD) & (c == 4)
+                  & (decision_grid < overcrowd_birth_p)] = ALIVE
         ngrid[(self.grid == DEAD) & (c == 3)] = ALIVE
         # Scramble
         if scramble:
@@ -170,7 +176,8 @@ class SporeLife(CellularAutomaton):
     
     def deterministic_step(self, silent: bool = False,
                            overcrowd_dormancy: bool = False,
-                           scramble: bool = False) -> np.ndarray:
+                           scramble: bool = False,
+                           overcrowd_birth_p: float = None) -> np.ndarray:
         """
         Perform a step in SporeLife without stochasticity, i.e. ignore the given
         alpha and pretend that alpha = 1.
@@ -191,6 +198,11 @@ class SporeLife(CellularAutomaton):
         # DORMANT awake
         ngrid[(self.grid == SPORE)
               & ((c == 2) | (c == 3))] = ALIVE
+        # Birth with 4 ALIVE neighbors with probability overcrowd_birth_p
+        if overcrowd_birth_p is not None:
+            decision_grid = self.rng.random((self.N, self.N))
+            ngrid[((self.grid == DEAD) | (self.grid == SPORE)) & (c == 4)
+                  & (decision_grid < overcrowd_birth_p)] = ALIVE
         if overcrowd_dormancy:
             overcrowd_lim = 4
         else:
@@ -218,7 +230,8 @@ class SporeLife(CellularAutomaton):
 
     def step(self, silent: bool = False,
              overcrowd_dormancy: bool = False,
-             scramble: bool = False) -> np.ndarray:
+             scramble: bool = False,
+             overcrowd_birth_p: float = None) -> np.ndarray:
         """
         Perform a (possibly stochastic) step in SporeLife.
         A silent step is only computed and returned but does not count as a time
@@ -228,7 +241,8 @@ class SporeLife(CellularAutomaton):
         """
         ngrid = self.deterministic_step(silent=True,
                                         overcrowd_dormancy=overcrowd_dormancy,
-                                        scramble=scramble)
+                                        scramble=scramble,
+                                        overcrowd_birth_p=overcrowd_birth_p)
         # Randomly kill SPOREs in ngrid based on alpha
         decision_grid = self.rng.random((self.N, self.N))
         ngrid[(ngrid == SPORE)
